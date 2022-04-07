@@ -5,16 +5,14 @@
 To find the PEAS description for the given AI problem and develop an AI agent.
 
 ## THEORY
-A vacuum-cleaner world with just two locations.
-Each location can be clean or dirty.
-The agent can move left or right and can clean the square that it occupies.
+Lift is a agent here.Two locations namely loc A (groundf floor)and loc B(first floor).If the lift door open in loc A ,the passengers will go up.If the lift door open in loc B ,the passengers will go down.If lift door close at loc A,the passenger will wait.If lift door close at loc B,the passenger will wait.
 
 
 
 ## PEAS DESCRIPTION
 | Agent type    | performance  measurement    |environment  |   Actuators         |  sensors                       | 
 |-------------  | --------------------------- | ----------- |-------------------- | ------------------------------ | 
-| vaccum cleaner| cleanliness,numberof moments| Rooms       |  wheels,suction tool|  location,cleanliness          |
+| Lift          | lifting passengers          | loc A,loc B | Buttons, door       |    touch sensor                |
 
 
 ## DESIGN STEPS
@@ -63,7 +61,7 @@ class Agent(Thing):
     def can_grab(self, thing):
         """Return True if this agent can grab this thing.
         Override for appropriate subclasses of Agent and Thing."""
-        return False
+        return True
 
 def TableDrivenAgentProgram(table):
     """
@@ -82,23 +80,33 @@ def TableDrivenAgentProgram(table):
 
     return program
 
-loc_A, loc_B = (0, 0), (1, 0)  # The two locations for the Vacuum world
+loc_A, loc_B = (0, 0), (0, 1)  # The two locations for the Lift world
 
 
 def TableDrivenVacuumAgent():
     """
     Tabular approach towards vacuum world
     """
-    table = {((loc_A, 'Clean'),): 'Right',
-             ((loc_A, 'Dirty'),): 'Suck',
-             ((loc_B, 'Clean'),): 'Left',
-             ((loc_B, 'Dirty'),): 'Suck',
-             ((loc_A, 'Dirty'), (loc_A, 'Clean')): 'Right',
-             ((loc_A, 'Clean'), (loc_B, 'Dirty')): 'Suck',
-             ((loc_B, 'Clean'), (loc_A, 'Dirty')): 'Suck',
-             ((loc_B, 'Dirty'), (loc_B, 'Clean')): 'Left',
-             ((loc_A, 'Dirty'), (loc_A, 'Clean'), (loc_B, 'Dirty')): 'Suck',
-             ((loc_B, 'Dirty'), (loc_B, 'Clean'), (loc_A, 'Dirty')): 'Suck'}
+    table = {((loc_A, 'open'),): 'up',
+             ((loc_A, 'close'),): 'wait',
+             ((loc_B, 'open'),): 'down',
+             ((loc_B, 'close'),): 'wait',
+             ((loc_A, 'close'), (loc_A, 'open')): 'up',
+             ((loc_A, 'open'), (loc_B, 'close')): 'wait',
+             ((loc_B, 'open'), (loc_A, 'close')): 'wait',
+             ((loc_B, 'close'), (loc_B, 'open')): 'down',
+             ((loc_A, 'close'), (loc_A, 'open'), (loc_B, 'close')): 'wait',
+             ((loc_B, 'close'), (loc_B, 'open'), (loc_A, 'close')): 'wait',
+             ((loc_A, 'open'),  (loc_B, 'open'), (loc_A, 'open')): 'up',
+             ((loc_B, 'open'), (loc_A, 'close'), (loc_B, 'open')): 'down',
+             ((loc_A, 'open'), (loc_A, 'close'), (loc_B, 'open'),(loc_A, 'open')): 'wait',
+             ((loc_B, 'open'), (loc_B, 'open'), (loc_A, 'open'),(loc_B, 'open')): 'wait',
+             ((loc_A, 'close'),  (loc_B, 'close'), (loc_A, 'close'),(loc_A, 'close')): 'up',
+             ((loc_B, 'close'), (loc_A, 'open'), (loc_B, 'close'),(loc_B, 'close')): 'down',
+             ((loc_A, 'open'), (loc_A, 'close'), (loc_B, 'open'),(loc_A, 'open')): 'wait',((loc_A, 'close'),): 'wait',
+             ((loc_B, 'open'), (loc_B, 'open'), (loc_A, 'open'),(loc_B, 'open')): 'wait',((loc_A, 'open'),): 'up',
+             ((loc_A, 'close'),  (loc_B, 'close'), (loc_A, 'close'),(loc_A, 'close')): 'up',((loc_B, 'close'),): 'wait',
+             ((loc_B, 'close'), (loc_A, 'open'), (loc_B, 'close'),(loc_B, 'close')): 'down',((loc_B, 'open'),): 'down' }
     return Agent(TableDrivenAgentProgram(table))
 
 
@@ -148,7 +156,7 @@ class Environment:
             for (agent, action) in zip(self.agents, actions):
                 self.execute_action(agent, action)
 
-    def run(self, steps=1000):
+    def run(self, steps=3000):
         """Run the Environment for given number of time steps."""
         for step in range(steps):
             if self.is_done():
@@ -204,16 +212,16 @@ class TrivialVacuumEnvironment(Environment):
     def execute_action(self, agent, action):
         """Change agent's location and/or location's status; track performance.
         Score 10 for each dirt cleaned; -1 for each move."""
-        if action=='Right':
-            agent.location = loc_B
-            agent.performance -=1
-        elif action=='Left':
+        if action=='up':
             agent.location = loc_A
             agent.performance -=1
-        elif action=='Suck':
-            if self.status[agent.location]=='Dirty':
+        elif action=='down':
+            agent.location = loc_B
+            agent.performance -=1
+        elif action=='wait':
+            if self.status[agent.location]=='close':
                 agent.performance+=10
-            self.status[agent.location]='Clean'
+            self.status[agent.location]='open'
 
     def default_location(self, thing):
         """Agents start in either location at random."""
@@ -224,19 +232,21 @@ if __name__ == "__main__":
     agent = TableDrivenVacuumAgent()
     environment = TrivialVacuumEnvironment()
     environment.add_thing(agent)
-    print('\033[1m' + 'Before Action\n' + '\033[0m',environment.status)
-    print('\033[1m' + 'Agent Location\n' + '\033[0m',agent.location)
-    environment.run(steps=1)
-    print('\033[1m' + 'After Action\n' + '\033[0m',environment.status)
-    print('\033[1m' + 'Agent Location\n' + '\033[0m',agent.location)
-    print('\033[1m' + 'Agent Performance\n' + '\033[0m',agent.performance)
+    print("before execution:")
+    print(environment.status)
+    print("agent location:{0}".format(agent.location))
+    print("performance:{0}".format(agent.performance))
+    environment.run()
+    print("after execution")
+    print(environment.status)
+    print("agent location:{0}".format(agent.location))
+    print("performance:{0}".format(agent.performance))
+   
 ```
 
 ## OUTPUT
+![Screenshot (40)](https://user-images.githubusercontent.com/75243072/162258417-f79de2f7-168d-496d-8934-e0cfd33fe4e9.png)
 
-![Screenshot (30)](https://user-images.githubusercontent.com/75243072/162039498-cf77bb44-16cc-4ce3-a603-f60ad5d8d7b7.png)
-
-![Screenshot (31)](https://user-images.githubusercontent.com/75243072/162039423-74ff7458-e377-4aad-aced-dc4cc063609a.png)
 
 
 ## RESULT
