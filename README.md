@@ -37,9 +37,13 @@ Implementing the AI agent
 Measure the performance parameters
 
 ## PROGRAM
+```
+Developed By
+Student name : Kumaran.B
+Reg.no : 212220230026
+```
 ```python
 import random
-
 class Thing:
     """
         This represents any physical object that can appear in an Environ
@@ -47,11 +51,9 @@ class Thing:
     """
 
     def is_alive(self):
-        """Things that are 'alive' should return true."""
         return hasattr(self, 'alive') and self.alive
 
     def show_state(self):
-        """Display the agent's internal state. Subclasses should override."""
         print("I don't know how to show_state.")
 class Agent(Thing):
     """
@@ -65,7 +67,6 @@ class Agent(Thing):
 
     def can_grab(self, thing):
         """Return True if this agent can grab this thing.
-        Override for appropriate subclasses of Agent and Thing."""
         return True
 def TableDrivenAgentProgram(table):
     """
@@ -86,9 +87,6 @@ def TableDrivenAgentProgram(table):
 
 loc_A, loc_B = (0, 0), (0, 1)  # The two locations for the lift
 def TableDrivenVacuumAgent():
-    """
-    Tabular approach towards vacuum world
-    """
     table = {((loc_A, 'open'),): 'up',
              ((loc_A, 'close'),): 'wait',
              ((loc_B, 'open'),): 'down',
